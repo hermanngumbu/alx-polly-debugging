@@ -9,34 +9,53 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { register } from '@/app/lib/actions/auth-actions';
 
+/**
+ * Renders the registration page, allowing new users to create an account.
+ * This client component handles form submission, displays loading states, and shows error messages.
+ */
 export default function RegisterPage() {
+  // State to manage and display registration errors.
   const [error, setError] = useState<string | null>(null);
+  // State to manage the loading status during form submission.
   const [loading, setLoading] = useState(false);
+  // Next.js router for programmatic navigation.
   const router = useRouter();
 
+  /**
+   * Handles the submission of the registration form.
+   * Prevents default form submission, sets loading state, performs client-side password matching,
+   * calls the register Server Action, and handles success or error responses, including redirection.
+   * @param event The form submission event.
+   */
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
+    event.preventDefault(); // Prevent default browser form submission.
+    setLoading(true); // Indicate that the registration process is in progress.
+    setError(null); // Clear any previous errors.
+
+    // Extract form data for name, email, password, and confirm password.
     const formData = new FormData(event.currentTarget);
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const confirmPassword = formData.get('confirmPassword') as string;
 
+    // Perform client-side password matching.
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
+      setError('Passwords do not match'); // Display error if passwords don't match.
+      setLoading(false); // Reset loading state.
+      return; // Stop the submission process.
     }
 
+    // Call the server-side register action.
     const result = await register({ name, email, password });
 
+    // Handle the result from the register action.
     if (result?.error) {
-      setError(result.error);
-      setLoading(false);
+      setError(result.error); // Display the error message.
+      setLoading(false); // Reset loading state.
     } else {
-      router.push('/polls'); // Full reload to pick up session
+      // On successful registration, redirect to the polls page.
+      router.push('/polls');
     }
   };
 

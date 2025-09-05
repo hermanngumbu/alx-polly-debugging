@@ -2,22 +2,24 @@
 
 Welcome to ALX Polly, a full-stack polling application built with Next.js, TypeScript, and Supabase. This project serves as a practical learning ground for modern web development concepts, with a special focus on identifying and fixing common security vulnerabilities.
 
-## About the Application
+## Project Overview
 
 ALX Polly allows authenticated users to create, share, and vote on polls. It's a simple yet powerful application that demonstrates key features of modern web development:
 
--   **Authentication**: Secure user sign-up and login.
--   **Poll Management**: Users can create, view, and delete their own polls.
--   **Voting System**: A straightforward system for casting and viewing votes.
--   **User Dashboard**: A personalized space for users to manage their polls.
+*   **Authentication**: Secure user sign-up and login.
+*   **Poll Management**: Users can create, view, and delete their own polls.
+*   **Voting System**: A straightforward system for casting and viewing votes.
+*   **User Dashboard**: A personalized space for users to manage their polls.
+
+## Technology Stack
 
 The application is built with a modern tech stack:
 
--   **Framework**: [Next.js](https://nextjs.org/) (App Router)
--   **Language**: [TypeScript](https://www.typescriptlang.org/)
--   **Backend & Database**: [Supabase](https://supabase.io/)
--   **UI**: [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/)
--   **State Management**: React Server Components and Client Components
+*   **Framework**: [Next.js](https://nextjs.org/) (App Router)
+*   **Language**: [TypeScript](https://www.typescriptlang.org/)
+*   **Backend & Database**: [Supabase](https://supabase.io/)
+*   **UI**: [Tailwind CSS](https://tailwindcss.com/) with [shadcn/ui](https://ui.shadcn.com/)
+*   **State Management**: React Server Components and Client Components
 
 ---
 
@@ -97,34 +99,48 @@ During the security audit, several potential attack vectors were identified and 
 
 ---
 
-### Where to Start?
+## Getting Started: Local Development
 
-A good security audit involves both static code analysis and dynamic testing. Here’s a suggested approach:
-
-1.  **Familiarize Yourself with the Code**:
-    -   Start with `app/lib/actions/` to understand how the application interacts with the database.
-    -   Explore the page routes in the `app/(dashboard)/` directory. How is data displayed and managed?
-    -   Look for hidden or undocumented features. Are there any pages not linked in the main UI?
-
-2.  **Use Your AI Assistant**:
-    -   This is an open-book test. You are encouraged to use AI tools to help you.
-    -   Ask your AI assistant to review snippets of code for security issues.
-    -   Describe a feature's behavior to your AI and ask it to identify potential attack vectors.
-    -   When you find a vulnerability, ask your AI for the best way to patch it.
-
----
-
-## Getting Started
-
-To begin your security audit, you'll need to get the application running on your local machine.
+To get the application running on your local machine, follow these steps:
 
 ### 1. Prerequisites
 
--   [Node.js](https://nodejs.org/) (v20.x or higher recommended)
--   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
--   A [Supabase](https://supabase.io/) account (the project is pre-configured, but you may need your own for a clean slate).
+*   [Node.js](https://nodejs.org/) (v20.x or higher recommended)
+*   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+*   A [Supabase](https://supabase.io/) account and project.
 
-### 2. Installation
+### 2. Supabase Project Setup
+
+1.  **Create a New Supabase Project**: Go to the [Supabase Dashboard](https://app.supabase.com/) and create a new project.
+2.  **Get your Project URL and Anon Key**: Navigate to `Project Settings` > `API` to find your `anon` public key and project URL. You will need these for your environment variables.
+3.  **Set up Database Schema**: Create the necessary tables and their columns. Here's a basic schema:
+
+    ```sql
+    -- public.users table is managed by Supabase Auth
+
+    CREATE TABLE public.polls (
+        id uuid DEFAULT uuid_generate_v4() NOT NULL,
+        user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+        question text NOT NULL,
+        options text[] DEFAULT ARRAY[]::text[] NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        CONSTRAINT polls_pkey PRIMARY KEY (id)
+    );
+
+    CREATE TABLE public.votes (
+        id uuid DEFAULT uuid_generate_v4() NOT NULL,
+        poll_id uuid REFERENCES public.polls(id) ON DELETE CASCADE NOT NULL,
+        user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+        option_index integer NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        CONSTRAINT votes_pkey PRIMARY KEY (id),
+        CONSTRAINT unique_vote_per_user_per_poll UNIQUE (poll_id, user_id)
+    );
+    ```
+
+4.  **Configure Row Level Security (RLS)**: This is crucial for securing your data. Enable RLS for the `polls` and `votes` tables and define policies. (Refer to the `Security Audit Findings & Remediation` section above for detailed RLS remediation steps).
+
+### 3. Installation
 
 Clone the repository and install the dependencies:
 
@@ -134,11 +150,19 @@ cd alx-polly
 npm install
 ```
 
-### 3. Environment Variables
+### 4. Environment Variables
 
-The project uses Supabase for its backend. An environment file `.env.local` is needed.Use the keys you created during the Supabase setup process.
+Create a `.env.local` file in the root of your project and add your Supabase credentials:
 
-### 4. Running the Development Server
+```
+NEXT_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+SUPABASE_SECRET_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY # Only needed for server-side operations, keep this secret!
+```
+
+**Important**: Never commit your `.env.local` file to version control.
+
+### 5. Running the Development Server
 
 Start the application in development mode:
 
@@ -147,5 +171,26 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:3000`.
+
+## Usage Examples
+
+### Creating a Poll
+
+1.  **Register/Login**: Navigate to `/register` or `/login` to create an account or sign in.
+2.  **Create Poll**: Go to `/create`. Enter your poll question and at least two options. Click "Create Poll".
+3.  **View Your Polls**: After creation, you'll be redirected to `/polls` where you can see your newly created poll.
+
+### Voting on a Poll
+
+1.  **Access Poll**: Go to `/polls` and select a poll you wish to vote on, or use a direct link if shared.
+2.  **Cast Your Vote**: Choose one of the available options and submit your vote. The system prevents duplicate votes from the same user on the same poll.
+
+### Sharing a Poll
+
+1.  **View Poll**: On the poll details page (`/polls/[id]`), you will see options to share the poll.
+2.  **Copy Link or QR Code**: You can copy the shareable link or scan the generated QR code to share the poll with others.
+3.  **Social Media Sharing**: Buttons are available for sharing on Twitter, Facebook, or via email.
+
+---
 
 Good luck, engineer! This is your chance to step into the shoes of a security professional and make a real impact on the quality and safety of this application. Happy hunting!

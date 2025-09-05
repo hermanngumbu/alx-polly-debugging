@@ -16,12 +16,24 @@ interface PollActionsProps {
   poll: Poll;
 }
 
+/**
+ * Client component that displays a single poll and provides action buttons (Edit, Delete)
+ * for the poll owner. It uses the authenticated user context to determine ownership.
+ * @param poll - The poll object to display and act upon.
+ */
 export default function PollActions({ poll }: PollActionsProps) {
+  // Access the authenticated user from the authentication context.
   const { user } = useAuth();
+
+  /**
+   * Handles the deletion of a poll.
+   * Confirms with the user before calling the server-side `deletePoll` action
+   * and then reloads the window to reflect the changes.
+   */
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this poll?")) {
-      await deletePoll(poll.id);
-      window.location.reload();
+      await deletePoll(poll.id); // Call the server-side delete action.
+      window.location.reload(); // Reload the page to show updated poll list.
     }
   };
 
@@ -39,6 +51,7 @@ export default function PollActions({ poll }: PollActionsProps) {
           </div>
         </div>
       </Link>
+      {/* Conditionally render Edit and Delete buttons only if the current user is the poll owner. */}
       {user && user.id === poll.user_id && (
         <div className="flex gap-2 p-2">
           <Button asChild variant="outline" size="sm">
