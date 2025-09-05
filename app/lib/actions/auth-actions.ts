@@ -12,7 +12,7 @@ export async function login(data: LoginFormData) {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: "Invalid credentials." };
   }
 
   // Success: no error
@@ -33,7 +33,7 @@ export async function register(data: RegisterFormData) {
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: "Registration failed. Please try again." };
   }
 
   // Success: no error
@@ -44,7 +44,7 @@ export async function logout() {
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
   if (error) {
-    return { error: error.message };
+    return { error: "Logout failed. Please try again." };
   }
   return { error: null };
 }

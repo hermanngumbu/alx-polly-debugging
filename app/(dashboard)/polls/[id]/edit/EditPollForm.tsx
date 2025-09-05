@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { updatePoll } from '@/app/lib/actions/poll-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ export default function EditPollForm({ poll }: { poll: any }) {
   const [options, setOptions] = useState<string[]>(poll.options || []);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
   const handleOptionChange = (idx: number, value: string) => {
     setOptions((opts) => opts.map((opt, i) => (i === idx ? value : opt)));
@@ -37,7 +39,7 @@ export default function EditPollForm({ poll }: { poll: any }) {
         } else {
           setSuccess(true);
           setTimeout(() => {
-            window.location.href = '/polls';
+            router.push('/polls');
           }, 1200);
         }
       }}
